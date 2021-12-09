@@ -1,0 +1,116 @@
+import React, { useState, useRef } from 'react';
+import './App.css';
+
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { getFirestore, collection, query, orderBy, limit, Timestamp, addDoc } from 'firebase/firestore';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { useCollectionData } from 'react-firebase-hooks/firestore'
+//import {} from 'firebase/firestore'
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyD7lsZCtWisXO6dnKF0CWDZhtawNt2Meas",
+  authDomain: "backend-test-e3b31.firebaseapp.com",
+  projectId: "backend-test-e3b31",
+  storageBucket: "backend-test-e3b31.appspot.com",
+  messagingSenderId: "996665900980",
+  appId: "1:996665900980:web:63c63c3789f4c85aa3fce1"
+};
+
+// Initialize Firebase
+const firebase = initializeApp(firebaseConfig);
+const auth = getAuth(firebase);
+const firestore = getFirestore(firebase);
+
+function App() {
+
+  const [user] = useAuthState(auth);
+
+  return (
+    <div className="App">
+      <header>
+        <h1>Rob Sucks</h1>
+        <SignOut />
+      </header>
+      <section>
+        {user ? <ChatRoom /> : <SignIn />}
+      </section>
+    </div>
+  );
+}
+
+function SignIn() {
+  const signInWithGoogle = () => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider);
+  }
+
+  return(
+    <button onClick={signInWithGoogle}>Sign in with Google</button>
+  )
+}
+
+function SignOut() {
+  return auth.currentUser && (
+    <button onClick={() => auth.signOut()}>Sign Out</button>
+  )
+}
+
+function ChatRoom() {
+  const dummy = useRef();
+  const messagesRef = collection(firestore, 'messages');
+  const q = query(messagesRef, orderBy('createdAt'), limit(25))
+  const [messages] = useCollectionData(q, {idField: 'id'});
+
+  const [formValue, setFormValue] = useState('');
+
+  const sendMessage = async(e) => {
+    e.preventDefault();
+    console.log("message sent");
+    const { uid, photoURL } = auth.currentUser;
+
+    await addDoc(messagesRef, {
+      text: formValue,
+      createdAt: Timestamp.fromDate(new Date("December 10, 1815")),
+      uid,
+      photoURL
+    });
+
+    setFormValue('');
+    dummy.current.scrollIntoView({behavior: 'smooth'});
+  }
+
+  return (
+    <>
+      <main>
+        {messages && messages.map(msg => <ChatMessage key={msg.id} message={msg} />)}
+        <div ref={dummy}></div>
+      </main>
+
+
+      <form onSubmit={sendMessage}>
+        <input value={formValue} onChange={(e) => setFormValue(e.target.value)}/>
+        <button type='submit'>Send</button>
+      </form>
+    </>
+  )
+}
+
+function ChatMessage(props) {
+  const {text, uid, photoURL} = props.message;
+
+  const messageClass = uid === auth.currentUser.uid ? 'sent' : 'received';
+
+  return (
+    <div className={`message ${messageClass}`}>
+      <img src={photoURL} alt="user"/>
+      <p>{text}</p>
+    </div>
+  )
+}
+
+export default App;
