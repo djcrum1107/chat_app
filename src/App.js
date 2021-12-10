@@ -4,7 +4,7 @@ import './App.css';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore, collection, query, orderBy, limit, addDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, orderBy, limit, addDoc, Timestamp } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useCollectionData } from 'react-firebase-hooks/firestore'
 // TODO: Add SDKs for Firebase products that you want to use
@@ -74,7 +74,7 @@ function ChatRoom() {
 
     await addDoc(messagesRef, {
       text: formValue,
-      createdAt: firestore.ServerValue.TIMESTAMP,
+      createdAt: Timestamp.now(),
       uid,
       photoURL
     });
